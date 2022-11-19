@@ -19,7 +19,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
   final myController = TextEditingController();
 
-  void _printLatestValue() {}
+
 }
 
 class _MyAppState extends State<MyApp> {
@@ -33,7 +33,7 @@ class _MyAppState extends State<MyApp> {
   
 
 
-  String urlhost ='http://localhost:64053';
+
   List<ModelUser> users = [];
   TextEditingController nameController = TextEditingController();
   late QrPainter _painter;
@@ -105,6 +105,10 @@ class _MyAppState extends State<MyApp> {
                   if (users.isEmpty) {
                     setState(() {
                       data = 'invalido';
+
+
+
+
                       print(data);
                     });
                   } else {
@@ -124,7 +128,7 @@ class _MyAppState extends State<MyApp> {
               child: Text("CARD"),
               onPressed: () { 
 
-                  openLink(users[0].id,users[0].email, users[0].nombre);
+                  openLink(users[0].id,users[0].email, users[0].nombre, users[0].appaterno, users[0].cargo, users[0].direccion);
 
          
                },
@@ -139,8 +143,8 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  void openLink( String para1, String para2, String para3) {
-    String url = Uri.encodeFull('http://localhost:51539/?para1=$idpersona&para2=$emailuser&para3=$nombre&para4=$appaterno&para5=$cargo&para6=$direccion');
+  void openLink( String para1, String para2, String para3, String appaterno, String cargo, String direccion) {
+    String url = 'http://localhost:52645/?para1=$idpersona&para2=$emailuser&para3=$nombre&para4=$appaterno&para5=$cargo&para6=$direccion';
 
 
     html.window.open(url, '_blank');
