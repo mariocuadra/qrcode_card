@@ -2,9 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:qrcode_card/models/http/models_user.dart';
+import 'service/notification_service.dart';
+import 'package:qrcode_card/models/http/user_response.dart';
 import 'package:qrcode_card/service/local_storage.dart';
-import 'package:qrcode_card/shared/custom_input.dart';
+import 'package:qrcode_card/shared/custom_flat_button.dart';
 import 'api/card_ubo_api.dart';
 import 'dart:html' as html;
 
@@ -18,36 +19,38 @@ class MyApp extends StatefulWidget {
   @override
   State<MyApp> createState() => _MyAppState();
   final myController = TextEditingController();
-
-
 }
 
 class _MyAppState extends State<MyApp> {
   String data = '';
   String emailuser = '';
-  String idpersona ="0"; 
-  String nombre ="nombre";
-  String appaterno ="apellido";
-  String cargo ="cargo";
-  String direccion ="direccion";
-  
 
-
-
-  List<ModelUser> users = [];
-  TextEditingController nameController = TextEditingController();
+  UserResponse user = UserResponse(
+      idcredencialpersona: 0,
+      nombrePrimero: 'nombrePrimero',
+      nombreSegundo: 'nombreSegundo',
+      appaterno: 'appaterno',
+      apmaterno: 'apmaterno',
+      cargo: 'cargo',
+      direccion: 'direccion',
+      telefono: 'telefono',
+      email: 'email',
+      ubicacion: 'ubicacion',
+      sitio_web: 'sitio_web',
+      imagenFoto: 'imagenFoto');
+  var nameController = TextEditingController();
   late QrPainter _painter;
   GlobalKey globalKey = GlobalKey();
+
   int size = 1;
-  
- 
+
   @override
   Widget build(BuildContext context) {
     _painter = QrPainter(
       errorCorrectionLevel: QrErrorCorrectLevel.H,
       eyeStyle: const QrEyeStyle(
         eyeShape: QrEyeShape.square,
-        color: Color(0xff128760),
+        color: Color.fromARGB(255, 58, 12, 206),
       ),
       data: json.encode(data),
       version: QrVersions.auto,
@@ -55,98 +58,123 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp(
       title: 'Material App',
+      scaffoldMessengerKey: NotificationService.messengerKey,
       home: Scaffold(
         appBar: AppBar(
           title: Text('Material App Bar'),
         ),
         body: Column(
           children: <Widget>[
-            CustomPaint(
-                size: Size.square((size * 100).toDouble()),
-                key: globalKey,
-                painter: _painter),
-            CustomInput(
-              nameController: nameController,
-            ),
-            TextButton(
-              child: const Text('QR'),
-              onPressed: () {
-                // print(nameController.text);
+            SingleChildScrollView(
 
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 50),
+                child: CustomPaint(
+                    size: Size.square((size * 100).toDouble()),
+                    key: globalKey,
+                    painter: _painter),
+              ),
+            ),
+            _buildTextField(
+              nameController,
+              "Ingrese email corporativo...",
+            ),
+            CustomFlatButton(
+              text: 'Validar',
+              onPressed: () {
                 setState(() {
                   emailuser = nameController.text;
                 });
-
-                CardUboApi.httpGet('findperson/$emailuser').then((jsonString) {
-                 users = [];
-
-                  for (var u in jsonString) {
-                    ModelUser user = ModelUser(
-                        id: u["idcard"],
-                        nombre: u["nombre"],
-                        appaterno: u["appaterno"],
-                        cargo: u["cargo"],
-                        direccion: u["direccion"],
-                        telefono: u["telefono"],
-                        email: u["email"]);
-                    users.add(user);
-
-                    idpersona =users[0].id;
-                    nombre=users[0].nombre;
-                    appaterno=users[0].appaterno;
-                    cargo = users[0].cargo;
-                    direccion=users[0].direccion;
-
-
-                    print(users[0].id);
-
-                  }
-
-                  if (users.isEmpty) {
+               
+                  final res = CardUboApi.fetchUser(emailuser);
+         
+                  res.then((json) {
                     setState(() {
-                      data = 'invalido';
+                      user.idcredencialpersona = json.idcredencialpersona;
+                      user.nombrePrimero = json.nombrePrimero;
+                      user.nombreSegundo = json.nombreSegundo;
+                      user.appaterno = json.appaterno;
+                      user.apmaterno = json.apmaterno;
+                      user.cargo = json.cargo;
+                      user.direccion = json.direccion;
+                      user.telefono = json.telefono;
+                      user.email = json.email;
+                      user.ubicacion = json.ubicacion;
+                      user.sitio_web = json.sitio_web;
+                      user.imagenFoto = json.imagenFoto;
 
 
 
-
-                      print(data);
                     });
-                  } else {
-                    setState(() {
-                      String url ='http://localhost:58853/?para1=$idpersona&para2=$emailuser&para3=$nombre&para4=$appaterno&para5=$cargo&para6=$direccion';
-                      data = url;
-                     
-                      
-                    });
-                  }
-                }).catchError((e) {
-                  print('error en: $e');
-                });
+
+                    if (user.idcredencialpersona == 0) {
+                      setState(() {
+                        data = 'invalido';
+                      });
+                    } else {
+                      setState(() {
+
+                        NotificationService.showSnackbarError('Usuario identificado', Colors.white.withOpacity(0.9), Colors.green);
+                        String url =  urlOneParam(user.email);
+
+                        data = url;
+
+
+                      });
+                    }
+                  });
+             
               },
             ),
-              TextButton(
-              child: Text("CARD"),
-              onPressed: () { 
-
-                  openLink(users[0].id,users[0].email, users[0].nombre, users[0].appaterno, users[0].cargo, users[0].direccion);
-
-         
-               },
-               
-              
-              ),
-
-
+            CustomFlatButton(
+                text: 'Vista',
+                onPressed: () {
+                  setState(() {
+                    print(user.idcredencialpersona);
+                    print(user.appaterno);
+                    openLink(user.email);
+            
+                  });
+                })
           ],
         ),
       ),
     );
   }
 
-  void openLink( String para1, String para2, String para3, String appaterno, String cargo, String direccion) {
-    String url = 'http://localhost:52645/?para1=$idpersona&para2=$emailuser&para3=$nombre&para4=$appaterno&para5=$cargo&para6=$direccion';
-
+  void openLink(String para2) {
+    String url =
+        'http://localhost:52423/qrcode-card-view/?para2=$para2';
 
     html.window.open(url, '_blank');
+  }
+
+
+   String urlOneParam(String para2) {
+    String url ='http://192.168.202.50/qrcode-card-view/?para2=$para2';
+
+     return url;
+  }
+
+  Widget _buildTextField(
+      TextEditingController textController, String hintText) {
+    return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Container(
+          
+          child: TextField(
+            onChanged: (value) {
+              setState(() {
+                data = value;
+              });
+            },
+            textAlign: TextAlign.center,
+            controller: textController,
+            decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: hintText,
+                hintStyle: TextStyle(fontSize: 18, color: Colors.black26)),
+          ),
+        ));
   }
 }

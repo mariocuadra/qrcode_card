@@ -1,70 +1,46 @@
-
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:qrcode_card/models/http/user_response.dart';
 import 'package:qrcode_card/service/local_storage.dart';
+import 'package:qrcode_card/service/notification_service.dart';
 
-
-class CardUboApi{
-
-
-
+class CardUboApi {
   static final Dio _dio = Dio();
 
-  static void configureDio(){
+  static void configureDio() {
+    _dio.options.baseUrl = 'http://salado.ubo.cl/api-qr-ubo/';
 
-    _dio.options.baseUrl ='http://localhost:3000/';
+    //  _dio.options.headers ={
+    //        'x-token' : LocalStorage.prefs.getString('token') ?? ''
 
-
-    _dio.options.headers ={
-          'x-token' : LocalStorage.prefs.getString('token') ?? ''
-
-    };    
-
-   
+    //  };
   }
 
-  static Future httpGet(String path) async{
+  static Future httpGet(String path) async {
+    try {
+      final resp = await _dio.get(path);
 
-    try{
-        final resp = await _dio.get(path);
-        
+              print('Codigo $resp.statusCode');
+              print('Mensaje $resp.statusMessage');
+              return resp.data;
 
-        return resp.data;
-        
-       
-    }catch(e){
-      throw('Error en el GET : $e');
+         } catch (e) {
+          print(e);
+          throw e;
     }
-
   }
 
+  static Future fetchUser(String emailuser) async {
+    UserResponse user;
+    try {
+      final res = await CardUboApi.httpGet('findperson/$emailuser');
 
- static Future<List<UserResponse>> fetchUser(String emailuser) async {
-  // ModelUser user= ModelUser(idcard: 'idcard', nombre: 'nombre', appaterno: 'appaterno', cargo: 'cargo', direccion: 'direccion', telefono: 'telefono', email: 'email');
+      user = UserResponse.fromJson(res);
 
-  List<UserResponse> users = [];
-
-  try {
-    await CardUboApi.httpGet('findperson/$emailuser').then((jsonString) {
-      for (var u in jsonString) {
-        UserResponse user = UserResponse(
-            idcard: u["idcard"],
-            nombre: u["nombre"],
-            appaterno: u["appaterno"],
-            cargo: u["cargo"],
-            direccion: u["direccion"],
-            telefono: u["telefono"],
-            email: u["email"]);
-
-        users.add(user);
-      }
-    });
-
-    return users;
-  } catch (e) {
-    
-    throw e;
+      return user;
+    } catch (e) {
+      print('error al consultar el usuario $e');
+        NotificationService.showSnackbarError('Usuario no valido', Colors.red.withOpacity(0.9), Colors.white);
+    }
   }
-}
-
 }
