@@ -24,6 +24,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String data = '';
   String emailuser = '';
+  String url = '';
 
   UserResponse user = UserResponse(
       idcredencialpersona: 0,
@@ -42,7 +43,7 @@ class _MyAppState extends State<MyApp> {
   late QrPainter _painter;
   GlobalKey globalKey = GlobalKey();
 
-  int size = 1;
+  int size = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -57,18 +58,15 @@ class _MyAppState extends State<MyApp> {
     );
 
     return MaterialApp(
-      title: 'Material App',
+      title: 'Credencial UBO',
       scaffoldMessengerKey: NotificationService.messengerKey,
       home: Scaffold(
-        appBar: AppBar(
-          title: Text('Material App Bar'),
-        ),
+  
         body: Column(
           children: <Widget>[
             SingleChildScrollView(
-
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 50),
+                padding: const EdgeInsets.symmetric(vertical: 15),
                 child: CustomPaint(
                     size: Size.square((size * 100).toDouble()),
                     key: globalKey,
@@ -85,45 +83,41 @@ class _MyAppState extends State<MyApp> {
                 setState(() {
                   emailuser = nameController.text;
                 });
-               
-                  final res = CardUboApi.fetchUser(emailuser);
-         
+
+                final res = CardUboApi.fetchUser(emailuser);
+                try {
                   res.then((json) {
+                    //  setState(() {
+                    //emailuser =json.email;
+                    url = urlOneParam(json.email.toString());
+
+                    NotificationService.showSnackbarError(
+                        'Usuario identificado',
+                        Colors.white.withOpacity(0.9),
+                        Colors.green);
+
                     setState(() {
-                      user.idcredencialpersona = json.idcredencialpersona;
-                      user.nombrePrimero = json.nombrePrimero;
-                      user.nombreSegundo = json.nombreSegundo;
-                      user.appaterno = json.appaterno;
-                      user.apmaterno = json.apmaterno;
-                      user.cargo = json.cargo;
-                      user.direccion = json.direccion;
-                      user.telefono = json.telefono;
-                      user.email = json.email;
-                      user.ubicacion = json.ubicacion;
-                      user.sitio_web = json.sitio_web;
-                      user.imagenFoto = json.imagenFoto;
-
-
-
+                      data = url;
                     });
 
-                    if (user.idcredencialpersona == 0) {
-                      setState(() {
-                        data = 'invalido';
-                      });
-                    } else {
-                      setState(() {
-
-                        NotificationService.showSnackbarError('Usuario identificado', Colors.white.withOpacity(0.9), Colors.green);
-                        String url =  urlOneParam(user.email);
-
-                        data = url;
-
-
-                      });
-                    }
+                    /*  user.idcredencialpersona = json.idcredencialpersona;
+                    user.nombrePrimero = json.nombrePrimero;
+                    user.nombreSegundo = json.nombreSegundo;
+                    user.appaterno = json.appaterno;
+                    user.apmaterno = json.apmaterno;
+                    user.cargo = json.cargo;
+                    user.direccion = json.direccion;
+                    user.telefono = json.telefono;
+                    user.email = json.email;
+                    user.ubicacion = json.ubicacion;
+                    user.sitio_web = json.sitio_web;
+                    user.imagenFoto = json.imagenFoto; */
                   });
-             
+                } catch (e) {
+                  data = 'invalido';
+
+                  print('error al consultar el usuario $e');
+                }
               },
             ),
             CustomFlatButton(
@@ -132,8 +126,7 @@ class _MyAppState extends State<MyApp> {
                   setState(() {
                     print(user.idcredencialpersona);
                     print(user.appaterno);
-                    openLink(user.email);
-            
+                    openLink(url);
                   });
                 })
           ],
@@ -142,18 +135,14 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  void openLink(String para2) {
-    String url =
-        'http://localhost:52423/qrcode-card-view/?para2=$para2';
-
+  void openLink(String url) {
     html.window.open(url, '_blank');
   }
 
+  String urlOneParam(String para2) {
+    String url = 'https://descarga.ubo.cl/qrcode-card-view/?para2=$para2';
 
-   String urlOneParam(String para2) {
-    String url ='http://192.168.202.50/qrcode-card-view/?para2=$para2';
-
-     return url;
+    return url;
   }
 
   Widget _buildTextField(
@@ -161,7 +150,6 @@ class _MyAppState extends State<MyApp> {
     return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Container(
-          
           child: TextField(
             onChanged: (value) {
               setState(() {
@@ -173,7 +161,8 @@ class _MyAppState extends State<MyApp> {
             decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hintText,
-                hintStyle: TextStyle(fontSize: 18, color: Colors.black26)),
+                hintStyle:
+                    const TextStyle(fontSize: 18, color: Colors.black26)),
           ),
         ));
   }
