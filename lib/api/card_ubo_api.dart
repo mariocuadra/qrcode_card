@@ -7,14 +7,11 @@ class CardUboApi {
   static final Dio _dio = Dio();
 
      static void configureDio() {
-    _dio.options.baseUrl = 'https://credencial.ubo.cl/';
-    print(_dio.options.baseUrl);
-    //_dio.options.baseUrl = 'http://192.168.202.50/api-qr-ubo/';
-   // _dio.options.baseUrl = 'https://10.16.3.178/api-qr-ubo/';
-   
+    _dio.options.baseUrl = 'https://credencial.ubo.cl/api/';
     _dio.options.headers['content-Type'] = 'application/json';
 
-
+    print(_dio.options.baseUrl);
+   
 
   }
 
